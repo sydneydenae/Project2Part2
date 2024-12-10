@@ -1,8 +1,12 @@
 **Group Project: Ben's Chili Bowl**
+<br>
 Sydney Stokes and Charlie Seigler
+<br>
+
 You are to modify the file 
  and add the implementation for each of the functions listed below. If you have already started you will see a parameter based to all the functions of type BENSCHILLIBOWL *mcg. All references to *mcg should be changed to *bcb to reference the global variable declared in main.c
 
+<br>
 
 /*Select a random item from the Menu and return it */
 MenuItem PickRandomMenuItem();
