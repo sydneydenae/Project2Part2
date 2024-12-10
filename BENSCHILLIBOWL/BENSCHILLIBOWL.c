@@ -24,7 +24,7 @@ int BENSCHILLIBOWLMenuLength = 10;
 
 /* Select a random item from the Menu and return it */
 MenuItem PickRandomMenuItem() {
-     srand(time(NULL));
+   
     int randItemIndex = rand() % BENSCHILLIBOWLMenuLength;
     return BENSCHILLIBOWLMenu[randItemIndex];
 }
@@ -67,7 +67,8 @@ BENSCHILLIBOWL* OpenRestaurant(int max_size, int expected_num_orders) {
         free(restaurant);
         return NULL;
     }
-
+    // seed random time
+      srand(time(NULL));
     printf("Restaurant is open!\n");
     return restaurant;
 }
@@ -118,11 +119,12 @@ int AddOrder(BENSCHILLIBOWL* bcb, Order* order) {
     while(bcb -> current_size >= bcb -> max_size){
         pthread_cond_wait(&(bcb->can_add_orders), &(bcb->mutex));
     }
-    order -> order_number = bcb -> current_size ++;
+    int next_order_number = bcb -> current_size + 1;
+    order -> order_number = next_order_number;
     AddOrderToBack(&(bcb -> orders), order);
     bcb -> current_size += 1;
 
-    pthread_cond_signal(&(bcb->can_get_orders));
+    pthread_cond_broadcast(&(bcb->can_get_orders));
     pthread_mutex_unlock(&(bcb->mutex)); 
     return order -> order_number;
 }
@@ -135,13 +137,20 @@ Order *GetOrder(BENSCHILLIBOWL* bcb) {
 
    pthread_mutex_lock(&(bcb->mutex));
 
-   while(bcb -> current_size == 0){
+   while(bcb -> current_size == 0 && bcb -> orders_handled < bcb -> expected_num_orders){
     pthread_cond_wait(&(bcb -> can_get_orders), &(bcb ->mutex));
+   }
+
+
+   if(bcb -> orders_handled >= bcb -> expected_num_orders){
+    pthread_mutex_unlock(&(bcb->mutex));
+    return NULL;
    }
 
    Order* popped_order = bcb -> orders;
    bcb -> orders = bcb -> orders -> next;
    bcb -> current_size--;
+   bcb -> orders_handled++;
    if(bcb -> current_size == 0){
     pthread_cond_signal(&(bcb -> can_add_orders));
    }

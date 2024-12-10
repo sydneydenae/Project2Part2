@@ -7,8 +7,8 @@
 // Feel free to play with these numbers! This is a great way to
 // test your implementation.
 #define BENSCHILLIBOWL_SIZE 100
-#define NUM_CUSTOMERS 90
-#define NUM_COOKS 10
+#define NUM_CUSTOMERS 10
+#define NUM_COOKS 1
 #define ORDERS_PER_CUSTOMER 3
 #define EXPECTED_NUM_ORDERS NUM_CUSTOMERS * ORDERS_PER_CUSTOMER
 
@@ -23,26 +23,28 @@ BENSCHILLIBOWL *bcb;
  *  - add their order to the restaurant.
  */
 void* BENSCHILLIBOWLCustomer(void* tid) {
-    int customer_id = (int)(long) tid;
+  int customer_id = (int)(long) tid;
 
+  for(int i = 0; i < ORDERS_PER_CUSTOMER; i++){
     Order* new_order = (Order*) malloc(sizeof(Order));
     if(new_order == NULL){
-      printf("Error: Could not allocate memory for order.\n");
-      return NULL;
+    printf("Error: Could not allocate memory for order.\n");
+    return NULL;
     }
+  
+  new_order -> menu_item = PickRandomMenuItem();
+  new_order -> customer_id = customer_id;
+  new_order -> next = NULL;
 
-    new_order -> menu_item = PickRandomMenuItem();
-    new_order -> customer_id = customer_id;
-    new_order -> next = NULL;
-
-    int order_number = AddOrder(bcb, new_order);
-    if(order_number == -1){
-      printf("Error: Could not add order for customer %d.\n", customer_id);
-      free(new_order);
-  	  return NULL;
-    }
-    printf("Customer %d placed order %d.\n", customer_id, order_number);
-	return NULL;
+  int order_number = AddOrder(bcb, new_order);
+  if(order_number == -1){
+    printf("Error: Could not add order for customer %d.\n", customer_id);
+    free(new_order);
+    return NULL;
+  }
+  printf("Customer %d placed order %d.\n", customer_id, order_number);
+}
+  return NULL;
 }
 
 /**
@@ -60,10 +62,12 @@ void* BENSCHILLIBOWLCook(void* tid) {
       Order* order = GetOrder(bcb);
 
       if(order == NULL){
-        printf("Cook %d: No more orders to fulfil. Exiting the restauraunt...", cook_id);
-        break;
+        if(bcb -> orders_handled >= bcb -> expected_num_orders){
+          printf("Cook %d: No more orders to fulfil. Exiting the restauraunt...", cook_id);
+          break;
+        }
+        continue;
       }
-
       printf("Cook %d: Fulfilling order #%d for customer %d: %s\n", cook_id, order -> order_number, order -> customer_id, order -> menu_item);
       free(order);
       orders_fulfilled++;
